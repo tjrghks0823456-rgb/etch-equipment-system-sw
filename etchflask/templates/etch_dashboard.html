@@ -58,6 +58,19 @@
             background: #94a3b8;
         }
 
+        .app-shell {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
+        }
+        .tab-viewport {
+            flex: 1 1 auto;
+            min-height: 0;
+            position: relative;
+            overflow: hidden;
+        }
         .header {
             background: var(--header);
             border-bottom: 3px solid var(--accent);
@@ -1688,8 +1701,8 @@
                     datasets: [
                         { label: '압력 mTorr', data: [], borderColor: '#3b82f6', backgroundColor: pGrad, fill: true, tension: 0.15, borderWidth: 2, yAxisID: 'y' },
                         { label: '진동 g', data: [], borderColor: '#f97316', backgroundColor: vGrad, fill: true, tension: 0.15, borderWidth: 2, yAxisID: 'y1' },
-                        { label: '온도 ℃', data: [], borderColor: '#10b981', tension: 0.15, yAxisID: 'y2', borderWidth: 1.5, borderDash: [4,2] },
-                        { label: '습도 %', data: [], borderColor: '#8b5cf6', tension: 0.15, yAxisID: 'y2', borderWidth: 1.5, borderDash: [2,2] }
+                        { label: '온도 ℃', data: [], borderColor: '#10b981', tension: 0.15, borderWidth: 1.5, yAxisID: 'y2', borderDash: [4,2] },
+                        { label: '습도 %', data: [], borderColor: '#8b5cf6', tension: 0.15, borderWidth: 1.5, yAxisID: 'y2', borderDash: [2,2] }
                     ]
                 },
                 options: {
