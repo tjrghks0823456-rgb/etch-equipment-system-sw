@@ -4,76 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>플라즈마 식각 장비 · 모니터링</title>
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         :root {
-            --bg: #090a0f;
-            --header: #11131c;
-            --card: rgba(22, 25, 37, 0.7);
-            --card-border: rgba(255, 255, 255, 0.08);
-            --accent: #00d2ff;
-            --accent-glow: rgba(0, 210, 255, 0.4);
-            --ok: #00e676;
-            --ok-glow: rgba(0, 230, 118, 0.4);
-            --warn: #ff9100;
-            --warn-glow: rgba(255, 145, 0, 0.4);
-            --alarm: #ff1744;
-            --alarm-glow: rgba(255, 23, 68, 0.4);
-            --muted: #8a8d9a;
-            --border: rgba(255, 255, 255, 0.1);
-            --text: #e2e4e9;
+            --bg: #f8fafc;
+            --header: #0f172a;
+            --card: #ffffff;
+            --accent: #3b82f6;
+            --ok: #10b981;
+            --warn: #f59e0b;
+            --alarm: #ef4444;
+            --muted: #64748b;
+            --border: #e2e8f0;
+            --text-main: #1e293b;
         }
-
         * { box-sizing: border-box; margin: 0; padding: 0; }
-        html, body {
-            height: 100%;
-            overflow: hidden;
-            background: var(--bg);
-            color: var(--text);
-            font-family: 'Inter', 'Malgun Gothic', '맑은 고딕', sans-serif;
-        }
         body {
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text-main);
+            min-height: 100vh;
+            line-height: 1.5;
         }
 
         /* Scrollbars */
         ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 6px;
+            height: 6px;
         }
         ::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.02);
+            background: #f1f5f9;
         }
         ::-webkit-scrollbar-thumb {
-            background: rgba(255, 255, 255, 0.12);
-            border-radius: 4px;
+            background: #cbd5e1;
+            border-radius: 3px;
         }
         ::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.25);
+            background: #94a3b8;
         }
 
-        .app-shell {
-            flex: 1 1 auto;
-            display: flex;
-            flex-direction: column;
-            min-height: 0;
-            overflow: hidden;
-        }
-        .tab-viewport {
-            flex: 1 1 auto;
-            min-height: 0;
-            position: relative;
-            overflow: hidden;
-        }
         .header {
             background: var(--header);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
             color: #fff;
             padding: 16px 24px;
             display: flex;
@@ -81,671 +52,263 @@
             align-items: center;
             flex-wrap: wrap;
             gap: 16px;
+            border-bottom: 4px solid var(--accent);
         }
-        .header h1 {
-            font-size: 1.25rem;
-            font-weight: 700;
-            font-family: 'Outfit', sans-serif;
-            background: linear-gradient(135deg, #fff 30%, var(--accent) 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .header h1 { 
+            font-size: 1.25rem; 
+            font-weight: 700; 
             letter-spacing: -0.02em;
         }
-        .header .sub {
-            font-size: 0.8rem;
-            color: var(--muted);
-            margin-top: 4px;
-            max-width: 520px;
-            line-height: 1.4;
+        .header .sub { 
+            font-size: 0.8rem; 
+            color: #94a3b8; 
+            margin-top: 4px; 
+            max-width: 650px; 
+            line-height: 1.4; 
         }
         .header-status {
-            display: flex; gap: 12px; align-items: center; flex-wrap: wrap;
-            font-size: 0.85rem;
+            display: flex; 
+            gap: 12px; 
+            align-items: center; 
+            flex-wrap: wrap;
+            font-size: 0.82rem;
         }
         .pill {
-            padding: 6px 14px;
-            border-radius: 6px;
-            font-weight: 600;
+            padding: 5px 12px; 
+            border-radius: 6px; 
+            font-weight: 600; 
             font-size: 0.78rem;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            transition: all 0.2s ease;
         }
-        .pill.state-idle, .pill.state-ready { background: rgba(55, 65, 81, 0.4); color: #d1d5db; }
-        .pill.state-running {
-            background: rgba(0, 230, 118, 0.1);
-            color: var(--ok);
-            border-color: rgba(0, 230, 118, 0.25);
-            box-shadow: 0 0 10px rgba(0, 230, 118, 0.1);
-        }
-        .pill.state-warning {
-            background: rgba(255, 145, 0, 0.1);
-            color: var(--warn);
-            border-color: rgba(255, 145, 0, 0.25);
-            box-shadow: 0 0 10px rgba(255, 145, 0, 0.1);
-        }
-        .pill.state-alarm {
-            background: rgba(255, 23, 68, 0.15);
-            color: var(--alarm);
-            border-color: rgba(255, 23, 68, 0.3);
-            box-shadow: 0 0 12px rgba(255, 23, 68, 0.15);
-        }
-        .pill.state-maintenance {
-            background: rgba(124, 58, 237, 0.15);
-            color: #a78bfa;
-            border-color: rgba(124, 58, 237, 0.3);
-        }
-        .pill.alarm-none { background: rgba(31, 41, 55, 0.4); color: var(--muted); }
-        .pill.alarm-code {
-            background: rgba(255, 23, 68, 0.2);
-            color: #fca5a5;
-            border-color: rgba(255, 23, 68, 0.4);
-            font-family: 'Share Tech Mono', monospace;
-            font-weight: 700;
-        }
+        .pill.state-idle { background: rgba(255, 255, 255, 0.08); color: #cbd5e1; }
+        .pill.state-ready { background: rgba(59, 130, 246, 0.15); color: #93c5fd; border-color: rgba(59, 130, 246, 0.3); }
+        .pill.state-running { background: rgba(16, 185, 129, 0.15); color: #6ee7b7; border-color: rgba(16, 185, 129, 0.3); }
+        .pill.state-warning { background: rgba(245, 158, 11, 0.15); color: #fde047; border-color: rgba(245, 158, 11, 0.3); }
+        .pill.state-alarm { background: rgba(239, 68, 68, 0.15); color: #fca5a5; border-color: rgba(239, 68, 68, 0.3); }
+        .pill.state-maintenance { background: rgba(124, 58, 237, 0.15); color: #c084fc; border-color: rgba(124, 58, 237, 0.3); }
+        .pill.alarm-none { background: rgba(255, 255, 255, 0.08); color: #cbd5e1; }
+        .pill.alarm-code { background: rgba(239, 68, 68, 0.25); color: #fca5a5; border-color: rgba(239, 68, 68, 0.35); font-family: monospace; }
 
         .tabs {
-            background: #11131a;
+            background: #1e293b;
             padding: 0 16px;
             display: flex;
             flex-wrap: wrap;
             gap: 4px;
-            border-bottom: 2px solid #000;
         }
         .tabs button {
             background: transparent;
-            color: var(--muted);
+            color: #94a3b8;
             border: none;
             padding: 14px 20px;
             cursor: pointer;
             font-weight: 600;
             font-size: 0.88rem;
-            border-radius: 8px 8px 0 0;
-            transition: all 0.3s ease;
-            position: relative;
+            transition: all 0.2s ease;
         }
-        .tabs button:hover {
-            color: #fff;
-            background: rgba(255, 255, 255, 0.03);
+        .tabs button:hover { 
+            color: #fff; 
+            background: #334155; 
         }
         .tabs button.active {
             background: var(--bg);
-            color: var(--accent);
+            color: var(--text-main);
             font-weight: 700;
-        }
-        .tabs button.active::after {
-            content: '';
-            position: absolute;
-            bottom: -2px;
-            left: 0;
-            right: 0;
-            height: 2px;
-            background: var(--accent);
-            box-shadow: 0 0 8px var(--accent);
+            box-shadow: inset 0 3px 0 var(--accent);
         }
 
-        .wrap {
-            padding: 16px 20px 20px;
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-            height: 100%;
-            overflow-y: auto;
-            overflow-x: hidden;
+        .wrap { 
+            padding: 20px; 
+            max-width: 1400px; 
+            margin: 0 auto; 
         }
-        .tab-panel {
-            display: none;
-            position: absolute;
-            inset: 0;
-            min-height: 0;
-        }
-        .tab-panel.active {
-            display: flex;
-            flex-direction: column;
-        }
-        .tab-panel.active > .wrap {
-            flex: 1 1 auto;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .rt-layout {
-            display: grid;
-            grid-template-columns: 1.1fr 1fr;
-            gap: 16px;
-            margin-bottom: 16px;
-            min-height: 0;
-        }
-        @media (max-width: 1150px) {
-            .rt-layout { grid-template-columns: 1fr; }
-        }
-
-        .panel {
-            background: var(--card);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 18px 20px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            transition: all 0.3s ease;
-        }
-        .panel:hover {
-            border-color: rgba(0, 210, 255, 0.15);
-            box-shadow: 0 8px 32px 0 rgba(0, 210, 255, 0.03);
-        }
-        .panel h2 {
-            font-size: 0.95rem;
-            color: #fff;
-            margin-bottom: 14px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            position: relative;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 600;
-        }
-        .panel h2::after {
-            content: '';
-            position: absolute;
-            bottom: -1px;
-            left: 0;
-            width: 40px;
-            height: 2px;
-            background: var(--accent);
-            box-shadow: 0 0 8px var(--accent);
-        }
-
-        .map-panel {
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-            min-height: 400px;
-        }
-        .map-container {
-            flex: 1 1 auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 0;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 8px;
-            padding: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.03);
-        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
 
         .cards {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-            gap: 12px;
-            margin-bottom: 14px;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 16px;
+            margin-bottom: 20px;
         }
         .card {
             background: var(--card);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 12px 14px;
-            box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.2);
-            transition: all 0.3s ease;
+            border-radius: 12px;
+            padding: 16px 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
         }
         .card:hover {
             transform: translateY(-2px);
-            border-color: rgba(0, 210, 255, 0.25);
-            box-shadow: 0 4px 20px 0 rgba(0, 210, 255, 0.08);
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+            border-color: #cbd5e1;
         }
-        .card label {
-            display: block;
-            font-size: 0.7rem;
-            color: var(--muted);
-            font-weight: 600;
-            letter-spacing: .05em;
-            text-transform: uppercase;
+        .card label { 
+            display: block; 
+            font-size: 0.75rem; 
+            color: var(--muted); 
+            font-weight: 700; 
+            text-transform: uppercase; 
+            letter-spacing: .05em; 
         }
-        .card .val {
-            font-size: 1.5rem;
-            font-weight: 700;
-            margin-top: 6px;
-            color: #fff;
-            font-family: 'Share Tech Mono', monospace;
+        .card .val { 
+            font-size: 1.6rem; 
+            font-weight: 700; 
+            margin-top: 6px; 
+            font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
         }
-        .card .unit {
-            font-size: 0.78rem;
-            color: var(--muted);
-            font-weight: 500;
+        .card .unit { 
+            font-size: 0.85rem; 
+            color: var(--muted); 
+            font-weight: 600; 
+            margin-left: 2px;
         }
-        .card.access-ok .val { color: var(--ok); text-shadow: 0 0 10px rgba(0, 230, 118, 0.2); }
-        .card.access-bad .val { color: var(--alarm); text-shadow: 0 0 10px rgba(255, 23, 68, 0.2); }
+        .card.access-ok .val { color: var(--ok); }
+        .card.access-bad .val { color: var(--alarm); }
 
         .grid2 {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 14px;
+            gap: 16px;
+            margin-bottom: 20px;
         }
-        @media (max-width: 600px) {
+        @media (max-width: 900px) {
             .grid2 { grid-template-columns: 1fr; }
         }
-        .panel-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-            font-size: 0.85rem;
+        .panel {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .panel h2 { 
+            font-size: 1rem; 
+            font-weight: 700; 
+            color: var(--header); 
+            margin-bottom: 14px; 
+            padding-bottom: 10px; 
+            border-bottom: 2px solid var(--accent); 
+        }
+        .panel-row { 
+            display: flex; 
+            justify-content: space-between; 
+            padding: 10px 0; 
+            border-bottom: 1px solid #f1f5f9; 
+            font-size: 0.9rem; 
         }
         .panel-row:last-child { border-bottom: none; }
-        .panel-row span:first-child { color: var(--muted); }
-        .panel-row span:last-child { font-weight: 600; color: #fff; }
+        .panel-row span:first-child { color: var(--muted); font-weight: 500; }
+        .panel-row span:last-child { font-weight: 600; }
 
         .chart-box {
             background: var(--card);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 16px 20px;
-            margin-bottom: 16px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .chart-box h2 {
-            font-size: 0.95rem;
-            margin-bottom: 12px;
-            color: #fff;
-            font-family: 'Outfit', sans-serif;
-            font-weight: 600;
+        .chart-box h2 { 
+            font-size: 1rem; 
+            font-weight: 700; 
+            margin-bottom: 16px; 
+            color: var(--header); 
         }
-
-        #tab-realtime.wrap,
-        #tab-realtime {
-            display: none;
-            flex-direction: column;
-            gap: 10px;
-            padding: 16px 20px;
-            max-width: 1600px;
-            margin: 0 auto;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-        #tab-realtime.active {
-            display: flex;
-        }
-        .rt-main {
-            flex: 1 1 auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            min-height: 0;
-        }
-        .chart-main {
-            flex: 1 1 auto;
-            display: flex;
-            flex-direction: column;
-            min-height: 180px;
-            margin-bottom: 0;
-        }
-        .chart-main .chart-canvas {
-            flex: 1 1 auto;
-            height: auto;
-            min-height: 120px;
-            max-height: min(34vh, 320px);
-            position: relative;
-        }
-        .tab-scroll-body {
-            flex: 1 1 auto;
-            min-height: 0;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-        .tab-table-scroll {
-            flex: 1 1 auto;
-            min-height: 120px;
-            max-height: min(50vh, 450px);
-            overflow: auto;
-            border: 1px solid var(--card-border);
-            border-radius: 8px;
-            background: rgba(0,0,0,0.2);
-        }
-        .tab-table-scroll table { margin: 0; }
-        
-        #tab-ai.active .wrap { display: flex; flex-direction: column; gap: 14px; }
-        
-        .ai-layout {
-            display: grid;
-            grid-template-columns: 1.1fr 1fr;
-            gap: 16px;
-            flex: 1 1 auto;
-            min-height: 0;
-        }
-        @media (max-width: 900px) {
-            .ai-layout { grid-template-columns: 1fr; }
-        }
-        .ai-layout .ai-box {
-            margin-bottom: 0;
-            flex: 1 1 auto;
-            min-height: 0;
-            display: flex;
-            flex-direction: column;
-        }
-        .ai-layout .ai-box .ai-pre {
-            flex: 1 1 auto;
-            max-height: min(30vh, 250px);
-            overflow-y: auto;
-            font-size: 0.75rem;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .ai-gauge-flex {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 30px;
-            flex: 1 1 auto;
-            padding: 10px 0;
-        }
-        @media (max-width: 500px) {
-            .ai-gauge-flex { flex-direction: column; text-align: center; }
-        }
-        
-        .ai-gauge-container {
-            position: relative;
-            width: 140px;
-            height: 140px;
-            flex: 0 0 auto;
-        }
-        .ai-gauge {
-            width: 100%;
-            height: 100%;
-        }
-        .gauge-bg {
-            fill: none;
-            stroke: rgba(255, 255, 255, 0.05);
-            stroke-width: 8;
-        }
-        .gauge-meter {
-            fill: none;
-            stroke: var(--ok);
-            stroke-width: 8;
-            stroke-linecap: round;
-            stroke-dasharray: 251.3;
-            stroke-dashoffset: 251.3;
-            transform: rotate(-90deg);
-            transform-origin: 50px 50px;
-            transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.6s ease;
-        }
-        .ai-gauge-val {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 1.8rem;
-            font-weight: 700;
-            color: #fff;
-            text-shadow: 0 0 10px rgba(255,255,255,0.1);
-        }
-        .ai-gauge-info {
-            flex: 1 1 auto;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .feature-importance-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            justify-content: center;
-            flex: 1 1 auto;
-        }
-        .feature-row {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 0.82rem;
-        }
-        .feat-lbl {
-            width: 120px;
-            color: var(--muted);
-            font-weight: 500;
-        }
-        .feat-bar-bg {
-            flex: 1 1 auto;
-            height: 8px;
-            background: rgba(255,255,255,0.05);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .feat-bar-fill {
-            height: 100%;
-            border-radius: 4px;
-            transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .feat-val {
-            width: 40px;
-            text-align: right;
-            font-family: 'Share Tech Mono', monospace;
-            font-weight: 700;
-            color: #fff;
-        }
-
-        #tab-events.active .log-box,
-        #tab-modules.active .log-box { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
-        #tab-history.active .wrap { display: flex; flex-direction: column; gap: 12px; height: 100%; }
-        #tab-history .chart-box { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin-bottom: 0; }
-        #tab-history .chart-box .chart-canvas { flex: 1 1 auto; height: auto; min-height: 150px; max-height: min(40vh, 380px); }
-        .log-strip { flex: 0 0 auto; }
-        .log-strip .log-box { margin-bottom: 0; }
-        .log-strip .table-scroll {
-            max-height: 110px;
-            overflow-y: auto;
-            overflow-x: auto;
-            border: 1px solid rgba(255,255,255,0.04);
-            border-radius: 6px;
-            background: rgba(0,0,0,0.15);
-        }
-
-        .chart-canvas { height: 260px; position: relative; }
+        .chart-canvas { height: 280px; position: relative; }
 
         .log-box {
             background: var(--card);
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            padding: 14px 18px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .log-box h2 { font-size: 0.9rem; margin-bottom: 6px; color: #fff; font-family: 'Outfit', sans-serif; }
-        .log-toolbar { font-size: 0.75rem; color: var(--muted); margin-bottom: 6px; }
-        table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
-        th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid rgba(255,255,255,0.04); }
-        th { background: rgba(255,255,255,0.02); color: var(--muted); font-weight: 600; }
-        tr:hover td { background: rgba(255, 255, 255, 0.02); }
-        .empty-msg { color: var(--muted); padding: 20px; text-align: center; font-size: 0.8rem; }
-
-        .kpi-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
-        .kpi {
-            background: var(--card);
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 12px 16px;
-            min-width: 140px;
-            flex: 1 1 auto;
-            box-shadow: 0 4px 16px 0 rgba(0,0,0,0.15);
+        .log-box h2 { 
+            font-size: 1rem; 
+            font-weight: 700; 
+            margin-bottom: 10px; 
+            color: var(--header); 
         }
-        .kpi .lbl { font-size: 0.72rem; color: var(--muted); font-weight: 600; text-transform: uppercase; }
-        .kpi .num {
-            font-size: 1.3rem;
-            font-weight: 700;
-            margin-top: 4px;
-            color: #fff;
-            font-family: 'Share Tech Mono', monospace;
+        .log-toolbar { 
+            font-size: 0.8rem; 
+            color: var(--muted); 
+            margin-bottom: 12px; 
         }
-
-        .ai-box {
-            background: var(--card);
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            padding: 18px 20px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
-        }
-        .ai-box h2 { font-size: 0.95rem; margin-bottom: 10px; color: #fff; font-family: 'Outfit', sans-serif; }
-        .ai-pre {
-            background: #090a0f;
-            color: #d1d5db;
-            padding: 12px;
-            border-radius: 6px;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.78rem;
+        .table-container {
             overflow-x: auto;
-            white-space: pre-wrap;
-        }
-
-        .mod-toolbar { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 12px; font-size: 0.8rem; color: var(--muted); }
-        .mod-toolbar select, .mod-toolbar button {
-            padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border);
-            background: rgba(255,255,255,0.03); color: #fff; font-weight: 600; cursor: pointer;
-            transition: all 0.3s ease;
-        }
-        .mod-toolbar select:hover, .mod-toolbar button:hover {
-            background: rgba(255,255,255,0.08);
-            border-color: rgba(255,255,255,0.2);
-        }
-        .mod-toolbar select option {
-            background: #11131a;
-            color: #fff;
-        }
-        .mod-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-        .mod-chip {
-            border: 1px solid var(--card-border);
+            border: 1px solid var(--border);
             border-radius: 8px;
-            padding: 10px;
-            text-align: center;
-            font-size: 0.72rem;
-            background: rgba(255,255,255,0.02);
-            transition: all 0.3s ease;
         }
-        .mod-chip .mid { font-weight: 700; font-size: 0.8rem; margin: 4px 0; color: #fff; }
-        .mod-chip .st { font-weight: 600; font-size: 0.7rem; color: var(--muted); }
-        .mod-chip.st-running, .mod-chip.st-processing, .mod-chip.st-complete { border-color: rgba(0, 230, 118, 0.3); background: rgba(0, 230, 118, 0.05); }
-        .mod-chip.st-running .st, .mod-chip.st-processing .st { color: var(--ok); }
-        .mod-chip.st-alarm { border-color: rgba(255, 23, 68, 0.3); background: rgba(255, 23, 68, 0.05); }
-        .mod-chip.st-alarm .st { color: var(--alarm); }
-        .mod-chip.st-warning { border-color: rgba(255, 145, 0, 0.3); background: rgba(255, 145, 0, 0.05); }
-        .mod-chip.st-warning .st { color: var(--warn); }
-        .mod-chip.st-maintenance { border-color: rgba(124, 58, 237, 0.3); background: rgba(124, 58, 237, 0.05); }
-        .mod-chip.st-maintenance .st { color: #a78bfa; }
-        .mod-chip.st-offline { opacity: 0.5; }
-        
-        .badge-state {
-            display: inline-block; padding: 3px 8px; border-radius: 4px;
-            font-size: 0.72rem; font-weight: 700;
-            border: 1px solid transparent;
+        table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            font-size: 0.82rem; 
         }
-        .badge-state.st-running, .badge-state.st-processing { background: rgba(0, 230, 118, 0.1); color: var(--ok); border-color: rgba(0, 230, 118, 0.15); }
-        .badge-state.st-alarm { background: rgba(255, 23, 68, 0.15); color: var(--alarm); border-color: rgba(255, 23, 68, 0.2); }
-        .badge-state.st-warning { background: rgba(255, 145, 0, 0.1); color: var(--warn); border-color: rgba(255, 145, 0, 0.15); }
-        .badge-state.st-maintenance { background: rgba(124, 58, 237, 0.15); color: #a78bfa; border-color: rgba(124, 58, 237, 0.2); }
-        .badge-state.st-offline { background: rgba(255,255,255,0.05); color: var(--muted); }
+        th, td { 
+            text-align: left; 
+            padding: 10px 12px; 
+            border-bottom: 1px solid var(--border); 
+            white-space: nowrap;
+        }
+        th { 
+            background: #f8fafc; 
+            color: var(--muted); 
+            font-weight: 700; 
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        tr:hover td { background: #f8fafc; }
+        .empty-msg { color: var(--muted); padding: 32px; text-align: center; font-size: 0.85rem; }
 
-        /* SVG Chamber Map styles */
-        .chamber-map-svg {
-            width: 100%;
-            height: 100%;
+        .kpi-row { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+        .kpi { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 12px; 
+            padding: 16px 20px; 
+            min-width: 160px;
+            flex: 1 1 auto;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .map-chamber {
-            fill: rgba(22, 25, 37, 0.85);
-            stroke: rgba(255, 255, 255, 0.12);
-            stroke-width: 1.5;
-            transition: all 0.4s ease;
-        }
-        .map-st-idle {
-            fill: rgba(31, 41, 55, 0.6);
-            stroke: rgba(156, 163, 175, 0.4);
-        }
-        .map-st-running, .map-st-processing {
-            fill: rgba(0, 230, 118, 0.08);
-            stroke: var(--ok);
-            filter: drop-shadow(0 0 6px rgba(0, 230, 118, 0.4));
-        }
-        .map-st-ready {
-            fill: rgba(0, 210, 255, 0.06);
-            stroke: var(--accent);
-            filter: drop-shadow(0 0 4px rgba(0, 210, 255, 0.3));
-        }
-        .map-st-alarm {
-            fill: rgba(255, 23, 68, 0.12);
-            stroke: var(--alarm);
-            filter: drop-shadow(0 0 10px rgba(255, 23, 68, 0.6));
-            animation: alert-pulse 1s infinite alternate;
-        }
-        .map-st-warning {
-            fill: rgba(255, 145, 0, 0.1);
-            stroke: var(--warn);
-            filter: drop-shadow(0 0 6px rgba(255, 145, 0, 0.4));
-        }
-        .map-st-maintenance {
-            fill: rgba(124, 58, 237, 0.1);
-            stroke: #a78bfa;
-        }
-        .map-st-offline {
-            fill: rgba(17, 24, 39, 0.9);
-            stroke: rgba(75, 85, 99, 0.2);
-            opacity: 0.55;
-        }
-        @keyframes alert-pulse {
-            0% { fill: rgba(255, 23, 68, 0.05); }
-            100% { fill: rgba(255, 23, 68, 0.25); }
+        .kpi .lbl { font-size: 0.75rem; color: var(--muted); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+        .kpi .num { 
+            font-size: 1.4rem; 
+            font-weight: 700; 
+            margin-top: 6px; 
+            font-family: 'SFMono-Regular', Consolas, monospace;
         }
 
-        .map-lbl-name {
-            font-family: 'Outfit', sans-serif;
-            font-size: 8px;
-            font-weight: 700;
-            fill: #fff;
-            text-anchor: middle;
-            pointer-events: none;
+        .ai-box { 
+            background: var(--card); 
+            border: 1px solid var(--border); 
+            border-radius: 12px; 
+            padding: 20px; 
+            margin-bottom: 16px; 
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         }
-        .map-lbl-type {
-            font-family: 'Inter', sans-serif;
-            font-size: 6px;
-            font-weight: 500;
-            fill: var(--muted);
-            text-anchor: middle;
-            pointer-events: none;
-        }
-        .map-lbl-state {
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 7.5px;
-            fill: var(--accent);
-            text-anchor: middle;
-            font-weight: 700;
-            pointer-events: none;
-        }
-        .map-wafer {
-            fill: #ffb74d;
-            stroke: #e65100;
-            stroke-width: 1.2;
-            filter: drop-shadow(0 0 5px rgba(255, 183, 77, 0.8));
-            animation: pulse-wafer 1.5s infinite alternate;
-        }
-        @keyframes pulse-wafer {
-            0% { filter: drop-shadow(0 0 2px rgba(255, 183, 77, 0.4)); r: 7.5px; }
-            100% { filter: drop-shadow(0 0 7px rgba(255, 183, 77, 1)); r: 8.5px; }
+        .ai-box h2 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; color: var(--header); }
+        .ai-pre { 
+            background: #0f172a; 
+            color: #cbd5e1; 
+            padding: 14px; 
+            border-radius: 8px; 
+            font-size: 0.8rem; 
+            font-family: 'SFMono-Regular', Consolas, monospace;
+            overflow-x: auto; 
+            white-space: pre-wrap; 
         }
 
         footer.note {
-            flex: 0 0 auto;
-            font-size: 0.72rem; color: var(--muted);
-            padding: 8px 24px 10px;
-            max-width: 1600px; margin: 0 auto;
-            width: 100%;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            background: var(--header);
+            font-size: 0.75rem; 
+            color: var(--muted);
+            padding: 24px;
+            max-width: 1400px; 
+            margin: 0 auto;
+            text-align: center;
         }
     </style>
 </head>
@@ -753,16 +316,14 @@
     <header class="header">
         <div>
             <h1>플라즈마 식각 · 원격 모니터링</h1>
-            <div class="sub">WPF 텔레메트리 · 서버 이력 · 이벤트 (조회 전용)</div>
+            <div class="sub">WPF HMI 텔레메트리 실시간 연동 및 서버 데이터 이력 모니터링 대시보드 (조회 전용)</div>
         </div>
         <div class="header-status">
-            <span id="hdrEc" class="pill alarm-none">EtherCAT: -</span>
-            <span id="hdrDemo" class="pill alarm-none" style="display:none;">데모 수신 중</span>
             <span id="hdrUser" class="pill alarm-none">사용자: -</span>
             <span id="hdrState" class="pill state-idle">상태: -</span>
             <span id="hdrAlarm" class="pill alarm-none">알람: -</span>
             <span id="hdrInterlock" class="pill alarm-none">인터록: -</span>
-            <span id="hdrTime" style="color:#9ca3af; font-family:'Share Tech Mono', monospace; font-size:0.82rem;">마지막 수신: -</span>
+            <span id="hdrTime" style="color: #94a3b8; font-weight: 500;">마지막 수신: -</span>
         </div>
     </header>
 
@@ -770,216 +331,68 @@
         <button type="button" class="active" data-tab="realtime" role="tab" aria-selected="true">실시간</button>
         <button type="button" data-tab="history" role="tab" aria-selected="false">서버 이력</button>
         <button type="button" data-tab="events" role="tab" aria-selected="false">이벤트</button>
-        <button type="button" data-tab="modules" role="tab" aria-selected="false">모듈 상태</button>
-        <button type="button" data-tab="recipe" role="tab" aria-selected="false">레시피</button>
         <button type="button" data-tab="ai" role="tab" aria-selected="false">AI 진단</button>
     </nav>
 
-    <main class="app-shell">
-    <div class="tab-viewport">
-    <div class="tab-panel active" id="tab-realtime" role="tabpanel">
-        <section class="rt-main">
-            <div class="rt-layout">
-                <!-- Left panel: Chamber Map -->
-                <div class="rt-left-panel">
-                    <div class="panel map-panel">
-                        <h2>장비 챔버 및 웨이퍼 이송 레이아웃 (Chamber Map)</h2>
-                        <div class="map-container">
-                            <svg viewBox="0 0 600 380" class="chamber-map-svg">
-                                <!-- Connection lines with glow -->
-                                <line x1="65" y1="80" x2="185" y2="220" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round" />
-                                <line x1="65" y1="190" x2="185" y2="220" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round" />
-                                <line x1="65" y1="300" x2="185" y2="220" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round" />
-                                <line x1="185" y1="220" x2="290" y2="190" stroke="rgba(255,255,255,0.06)" stroke-width="8" stroke-linecap="round" />
-                                <line x1="185" y1="100" x2="185" y2="220" stroke="rgba(255,255,255,0.06)" stroke-width="6" stroke-linecap="round" />
-                                
-                                <line x1="290" y1="190" x2="410" y2="190" stroke="rgba(255,255,255,0.06)" stroke-width="12" stroke-linecap="round" />
-                                <line x1="410" y1="190" x2="380" y2="80" stroke="rgba(255,255,255,0.06)" stroke-width="12" stroke-linecap="round" />
-                                <line x1="410" y1="190" x2="500" y2="80" stroke="rgba(255,255,255,0.06)" stroke-width="12" stroke-linecap="round" />
-                                <line x1="410" y1="190" x2="500" y2="300" stroke="rgba(255,255,255,0.06)" stroke-width="12" stroke-linecap="round" />
-                                <line x1="410" y1="190" x2="380" y2="300" stroke="rgba(255,255,255,0.06)" stroke-width="12" stroke-linecap="round" />
-                                <line x1="185" y1="220" x2="185" y2="330" stroke="rgba(255,255,255,0.06)" stroke-width="6" stroke-linecap="round" />
-
-                                <!-- LP1 (Load Port 1) -->
-                                <g class="map-group">
-                                    <rect id="map-rect-LOADPORT1" x="35" y="45" width="60" height="70" rx="6" class="map-chamber map-st-idle" />
-                                    <text x="65" y="68" class="map-lbl-name">LP1</text>
-                                    <text x="65" y="86" id="map-state-LOADPORT1" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-LOADPORT1" cx="65" cy="100" r="8" class="map-wafer" style="display:none;" />
-                                </g>
-                                <!-- LP2 (Load Port 2) -->
-                                <g class="map-group">
-                                    <rect id="map-rect-LOADPORT2" x="35" y="155" width="60" height="70" rx="6" class="map-chamber map-st-idle" />
-                                    <text x="65" y="178" class="map-lbl-name">LP2</text>
-                                    <text x="65" y="196" id="map-state-LOADPORT2" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-LOADPORT2" cx="65" cy="210" r="8" class="map-wafer" style="display:none;" />
-                                </g>
-                                <!-- LP3 (Load Port 3) -->
-                                <g class="map-group">
-                                    <rect id="map-rect-LOADPORT3" x="35" y="265" width="60" height="70" rx="6" class="map-chamber map-st-idle" />
-                                    <text x="65" y="288" class="map-lbl-name">LP3</text>
-                                    <text x="65" y="306" id="map-state-LOADPORT3" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-LOADPORT3" cx="65" cy="320" r="8" class="map-wafer" style="display:none;" />
-                                </g>
-
-                                <!-- EFEM ATM Robot -->
-                                <g class="map-group">
-                                    <circle id="map-rect-EFEMROBOT" cx="185" cy="220" r="28" class="map-chamber map-st-idle" />
-                                    <text x="185" y="215" class="map-lbl-name">ATM ROB</text>
-                                    <text x="185" y="230" id="map-state-EFEMROBOT" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-EFEMROBOT" cx="185" cy="220" r="8" class="map-wafer" style="display:none;" />
-                                </g>
-
-                                <!-- Aligner -->
-                                <g class="map-group">
-                                    <rect id="map-rect-ALIGNER" x="155" y="75" width="60" height="50" rx="6" class="map-chamber map-st-idle" />
-                                    <text x="185" y="96" class="map-lbl-name">ALIGNER</text>
-                                    <text x="185" y="110" id="map-state-ALIGNER" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-ALIGNER" cx="185" cy="100" r="8" class="map-wafer" style="display:none;" />
-                                </g>
-
-                                <!-- Side Storage -->
-                                <g class="map-group">
-                                    <rect id="map-rect-SIDESTORAGE" x="155" y="305" width="60" height="50" rx="6" class="map-chamber map-st-idle" />
-                                    <text x="185" y="326" class="map-lbl-name">SIDE STG</text>
-                                    <text x="185" y="340" id="map-state-SIDESTORAGE" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-SIDESTORAGE" cx="185" cy="330" r="8" class="map-wafer" style="display:none;" />
-                                </g>
-
-                                <!-- LL (BufferModule) -->
-                                <g class="map-group">
-                                    <rect id="map-rect-BUFFERMODULE" x="260" y="155" width="60" height="70" rx="6" class="map-chamber map-st-idle" />
-                                    <text x="290" y="178" class="map-lbl-name">L/L (BM)</text>
-                                    <text x="290" y="196" id="map-state-BUFFERMODULE" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-BUFFERMODULE" cx="290" cy="210" r="8" class="map-wafer" style="display:none;" />
-                                    <!-- Slit door line -->
-                                    <line id="map-door-BUFFERMODULE" x1="260" y1="180" x2="260" y2="200" stroke="#ff1744" stroke-width="4" />
-                                </g>
-
-                                <!-- VAC TM Robot -->
-                                <g class="map-group">
-                                    <circle id="map-rect-TRANSFERMODULE" cx="410" cy="190" r="32" class="map-chamber map-st-idle" />
-                                    <text x="410" y="185" class="map-lbl-name">VAC ROB</text>
-                                    <text x="410" y="200" id="map-state-TRANSFERMODULE" class="map-lbl-state">IDLE</text>
-                                    <!-- Dual blade indicator disks -->
-                                    <circle id="map-wafer-TRANSFERMODULE" cx="410" cy="190" r="8" class="map-wafer" style="display:none;" />
-                                </g>
-
-                                <!-- PM1 (Strip) -->
-                                <g class="map-group">
-                                    <rect id="map-rect-PM1" x="350" y="45" width="60" height="70" rx="6" class="map-chamber map-st-idle" />
-                                    <text x="380" y="66" class="map-lbl-name">PM1</text>
-                                    <text x="380" y="78" class="map-lbl-type">STRIP</text>
-                                    <text x="380" y="94" id="map-state-PM1" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-PM1" cx="380" cy="102" r="8" class="map-wafer" style="display:none;" />
-                                    <line id="map-door-PM1" x1="380" y1="115" x2="395" y2="115" stroke="#ff1744" stroke-width="3" />
-                                </g>
-                                <!-- PM2 (Etch) -->
-                                <g class="map-group">
-                                    <rect id="map-rect-PM2" x="470" y="45" width="60" height="70" rx="6" class="map-chamber map-st-idle" />
-                                    <text x="500" y="66" class="map-lbl-name">PM2</text>
-                                    <text x="500" y="78" class="map-lbl-type">ETCH</text>
-                                    <text x="500" y="94" id="map-state-PM2" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-PM2" cx="500" cy="102" r="8" class="map-wafer" style="display:none;" />
-                                    <line id="map-door-PM2" x1="470" y1="95" x2="470" y2="105" stroke="#ff1744" stroke-width="3" />
-                                </g>
-                                <!-- PM3 (Etch) -->
-                                <g class="map-group">
-                                    <rect id="map-rect-PM3" x="470" y="265" width="60" height="70" rx="6" class="map-chamber map-st-idle" />
-                                    <text x="500" y="286" class="map-lbl-name">PM3</text>
-                                    <text x="500" y="298" class="map-lbl-type">ETCH</text>
-                                    <text x="500" y="314" id="map-state-PM3" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-PM3" cx="500" cy="322" r="8" class="map-wafer" style="display:none;" />
-                                    <line id="map-door-PM3" x1="470" y1="315" x2="470" y2="325" stroke="#ff1744" stroke-width="3" />
-                                </g>
-                                <!-- PM4 (Etch) -->
-                                <g class="map-group">
-                                    <rect id="map-rect-PM4" x="350" y="265" width="60" height="70" rx="6" class="map-chamber map-st-idle" />
-                                    <text x="380" y="286" class="map-lbl-name">PM4</text>
-                                    <text x="380" y="298" class="map-lbl-type">ETCH</text>
-                                    <text x="380" y="314" id="map-state-PM4" class="map-lbl-state">IDLE</text>
-                                    <circle id="map-wafer-PM4" cx="380" cy="322" r="8" class="map-wafer" style="display:none;" />
-                                    <line id="map-door-PM4" x1="380" y1="265" x2="395" y2="265" stroke="#ff1744" stroke-width="3" />
-                                </g>
-                            </svg>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right panel: Telemetry Cards & Summary Panels -->
-                <div class="rt-right-panel">
-                    <div class="cards">
-                        <div class="card"><label>압력</label><div><span class="val" id="cPressure">-</span> <span class="unit">mTorr</span></div></div>
-                        <div class="card"><label>진동</label><div><span class="val" id="cVib">-</span> <span class="unit">g</span></div></div>
-                        <div class="card"><label>온도</label><div><span class="val" id="cTemp">-</span> <span class="unit">℃</span></div></div>
-                        <div class="card"><label>습도</label><div><span class="val" id="cHumi">-</span> <span class="unit">%</span></div></div>
-                        <div class="card" id="cardAccess"><label>도어 (유도형)</label><div><span class="val" id="cAccess">-</span></div></div>
-                    </div>
-                    <div class="grid2">
-                        <div class="panel">
-                            <h2>Load Lock 요약</h2>
-                            <div class="panel-row"><span>도어 (유도형)</span><span id="llAccess">-</span></div>
-                            <div class="panel-row"><span>압력 상태</span><span id="llPress">-</span></div>
-                            <div class="panel-row"><span>인터록 전체</span><span id="llInterlock">-</span></div>
-                        </div>
-                        <div class="panel">
-                            <h2>Chamber 요약</h2>
-                            <div class="panel-row"><span>온도 / 습도</span><span id="chEnv">-</span></div>
-                            <div class="panel-row"><span>압력 / 진동</span><span id="chPv">-</span></div>
-                            <div class="panel-row"><span>장비 상태</span><span id="chState">-</span></div>
-                        </div>
-                    </div>
-                </div>
+    <div class="wrap tab-panel active" id="tab-realtime" role="tabpanel">
+        <div class="cards">
+            <div class="card"><label>압력</label><div><span class="val" id="cPressure">-</span> <span class="unit" id="uPressure">kPa</span></div></div>
+            <div class="card"><label>진동</label><div><span class="val" id="cVib">-</span> <span class="unit">g</span></div></div>
+            <div class="card"><label>온도</label><div><span class="val" id="cTemp">-</span> <span class="unit">℃</span></div></div>
+            <div class="card"><label>습도</label><div><span class="val" id="cHumi">-</span> <span class="unit">%</span></div></div>
+            <div class="card" id="cardAccess"><label>접근 센서</label><div><span class="val" id="cAccess">-</span></div></div>
+        </div>
+        <div class="grid2">
+            <div class="panel">
+                <h2>Load Lock 요약</h2>
+                <div class="panel-row"><span>접근 / 도어 인터록</span><span id="llAccess">-</span></div>
+                <div class="panel-row"><span>압력 상태</span><span id="llPress">-</span></div>
+                <div class="panel-row"><span>인터록 전체</span><span id="llInterlock">-</span></div>
             </div>
-
-            <!-- Trend chart -->
-            <div class="chart-box chart-main">
-                <h2>실시간 트렌드 (브라우저 버퍼 · 최대 80점)</h2>
-                <div class="chart-canvas"><canvas id="trendChart"></canvas></div>
+            <div class="panel">
+                <h2>Chamber 요약</h2>
+                <div class="panel-row"><span>온도 / 습도</span><span id="chEnv">-</span></div>
+                <div class="panel-row"><span>압력 / 진동</span><span id="chPv">-</span></div>
+                <div class="panel-row"><span>장비 상태</span><span id="chState">-</span></div>
             </div>
-        </section>
-        
-        <!-- Live telemetry log strip -->
-        <section class="log-strip">
-            <div class="log-box">
-                <h2>수신 스냅샷 이력</h2>
-                <div class="log-toolbar">폴링 약 2초 · 값 변화 시만 추가 (WPF 하단 로그와 동일 역할)</div>
-                <div class="table-scroll">
-                    <table>
-                        <thead><tr><th>시간</th><th>상태</th><th>알람</th><th>인터록</th><th>압력</th><th>진동</th><th>온도</th><th>습도</th><th>접근</th></tr></thead>
-                        <tbody id="logBody"></tbody>
-                    </table>
-                </div>
-                <div id="logEmpty" class="empty-msg" style="display:none;">아직 수신 데이터가 없습니다. WPF HMI를 실행하세요.</div>
+        </div>
+        <div class="chart-box">
+            <h2>실시간 추세 (브라우저 버퍼 · 최대 80점)</h2>
+            <div class="chart-canvas"><canvas id="trendChart"></canvas></div>
+        </div>
+        <div class="log-box">
+            <h2>수신 스냅샷 이력</h2>
+            <div class="log-toolbar">폴링 주기 약 2초 · 표는 값 변화 발생 시에만 행 추가</div>
+            <div class="table-container">
+                <table>
+                    <thead><tr><th>시간</th><th>상태</th><th>알람</th><th>인터록</th><th>압력</th><th>진동</th><th>온도</th><th>습도</th><th>접근</th></tr></thead>
+                    <tbody id="logBody"></tbody>
+                </table>
             </div>
-        </section>
+            <div id="logEmpty" class="empty-msg" style="display:none;">아직 수신 데이터가 없습니다. WPF HMI를 실행하세요.</div>
+        </div>
     </div>
 
-    <!-- Server History tab -->
-    <div class="tab-panel" id="tab-history" role="tabpanel" hidden>
-        <div class="wrap">
+    <div class="wrap tab-panel" id="tab-history" role="tabpanel" hidden>
         <div class="kpi-row" id="kpiRow">
             <div class="kpi"><div class="lbl">버퍼 샘플 수</div><div class="num" id="kpiSamples">-</div></div>
             <div class="kpi"><div class="lbl">RUNNING 비율(추정)</div><div class="num" id="kpiRun">-</div></div>
             <div class="kpi"><div class="lbl">알람 이벤트</div><div class="num" id="kpiAlEv">-</div></div>
             <div class="kpi"><div class="lbl">인터록 위반 이벤트</div><div class="num" id="kpiIlEv">-</div></div>
         </div>
-        <p class="log-toolbar">Flask 메모리에 쌓인 시계열(최대 2500점). 서버 재시작 시 초기화됩니다.</p>
+        <p class="log-toolbar">Flask 메모리에 축적된 시계열 데이터(최대 2500점). 서버 재시작 시 초기화됩니다.</p>
         <div class="chart-box">
             <h2>서버 저장 추세</h2>
-            <div class="chart-canvas"><canvas id="serverTrendChart"></canvas></div>
+            <div class="chart-canvas" style="height:320px"><canvas id="serverTrendChart"></canvas></div>
         </div>
-        <button type="button" id="btnRefreshHistory" class="mod-toolbar button" style="margin-top: 10px; width: fit-content;">이력 다시 불러오기</button>
-        </div>
+        <button type="button" id="btnRefreshHistory" style="padding:10px 16px;border-radius:8px;border:1px solid var(--border);background:var(--card);cursor:pointer;font-weight:600;transition:all 0.2s;margin-top:10px;">이력 다시 불러오기</button>
     </div>
 
-    <!-- Events tab -->
-    <div class="tab-panel" id="tab-events" role="tabpanel" hidden>
-        <div class="wrap">
+    <div class="wrap tab-panel" id="tab-events" role="tabpanel" hidden>
         <div class="log-box">
             <h2>상태·알람·인터록 이벤트</h2>
-            <div class="log-toolbar">최근 100건 · Flask 메모리 (재시작 시 초기화)</div>
-            <div class="tab-table-scroll">
+            <div class="log-toolbar">최근 100건 · Flask 메모리 저장 (재시작 시 초기화)</div>
+            <div class="table-container">
                 <table>
                     <thead><tr><th>시간</th><th>유형</th><th>메시지</th><th>상태</th><th>알람</th><th>사용자</th></tr></thead>
                     <tbody id="eventsBody"></tbody>
@@ -987,136 +400,22 @@
             </div>
             <div id="eventsEmpty" class="empty-msg">이벤트 없음</div>
         </div>
-        </div>
     </div>
 
-    <!-- Modules Tab -->
-    <div class="tab-panel" id="tab-modules" role="tabpanel" hidden>
-        <div class="wrap">
-        <div class="mod-toolbar">
-            <label>데이터 소스
-                <select id="modSource">
-                    <option value="demo">demo (시뮬·벤치)</option>
-                    <option value="live">live (실측)</option>
-                </select>
-            </label>
-            <button type="button" id="btnModRefresh">지금 새로고침</button>
-            <span id="modMeta">갱신: - · 0개 모듈</span>
-        </div>
-        <div class="mod-grid" id="modMiniGrid"></div>
-        <div class="log-box">
-            <h2>모듈 테이블 (WPF POST modules[])</h2>
-            <div class="log-toolbar">API <code>GET /api/etch/modules/latest</code> · 약 2초 폴링</div>
-            <div class="tab-table-scroll">
-                <table>
-                    <thead><tr><th>ID</th><th>상태</th><th>도어</th><th>웨이퍼</th><th>상세</th></tr></thead>
-                    <tbody id="modTableBody"></tbody>
-                </table>
-            </div>
-            <div id="modEmpty" class="empty-msg">모듈 데이터 없음. WPF에서 시뮬 허용 후 Start 하세요.</div>
-        </div>
-        </div>
-    </div>
-
-    <!-- Recipe tab -->
-    <div class="tab-panel" id="tab-recipe" role="tabpanel" hidden>
-        <div class="wrap">
-        <div class="mod-toolbar">
-            <label>데이터 소스
-                <select id="recSource">
-                    <option value="demo">demo (시뮬·벤치)</option>
-                    <option value="live">live (실측)</option>
-                </select>
-            </label>
-            <button type="button" id="btnRecRefresh">지금 새로고침</button>
-            <span id="recMeta">활성 레시피: -</span>
-        </div>
-        <div class="kpi-row">
-            <div class="kpi"><div class="lbl">이름</div><div class="num" id="recName" style="font-size:1.1rem">-</div></div>
-            <div class="kpi"><div class="lbl">버전</div><div class="num" id="recVer" style="font-size:1.05rem">-</div></div>
-            <div class="kpi"><div class="lbl">식각 PM</div><div class="num" id="recSeq" style="font-size:0.95rem">-</div></div>
-        </div>
-        <div class="grid2">
-            <div class="panel">
-                <h2>가공 tick (시뮬)</h2>
-                <div class="panel-row"><span>Etch (PM2~4)</span><span id="recEtchTick">-</span></div>
-                <div class="panel-row"><span>Strip (PM1)</span><span id="recStripTick">-</span></div>
-                <div class="panel-row"><span>Aligner</span><span id="recAlignTick">-</span></div>
-            </div>
-            <div class="panel">
-                <h2>출처</h2>
-                <div class="panel-row"><span>레시피 ID</span><span id="recId">-</span></div>
-                <div class="panel-row"><span>데이터 소스</span><span id="recDataSrc">-</span></div>
-                <div class="panel-row"><span>XML (WPF)</span><span>Recipes/default.process.xml</span></div>
-            </div>
-        </div>
-        <div id="recEmpty" class="empty-msg">레시피 없음. WPF RUNNING 후 sensor-data의 recipe 필드를 확인하세요.</div>
-        </div>
-    </div>
-
-    <!-- AI Diagnosis tab -->
-    <div class="tab-panel" id="tab-ai" role="tabpanel" hidden>
-        <div class="wrap">
-        <div class="kpi-row" style="margin-bottom:14px;">
-            <div class="kpi"><div class="lbl">이상 점수</div><div class="num" id="aiScoreNum">-</div></div>
-            <div class="kpi"><div class="lbl">모델</div><div class="num" id="aiModelReady" style="font-size:1rem">-</div></div>
-            <div class="kpi"><div class="lbl">갱신</div><div class="num" id="aiUpdatedAt" style="font-size:0.9rem">-</div></div>
-        </div>
-        <div class="ai-layout">
-            <div class="panel ai-box">
-                <h2>AI Anomaly Score (이상 위험도)</h2>
-                <div class="ai-gauge-flex">
-                    <div class="ai-gauge-container">
-                        <svg class="ai-gauge" viewBox="0 0 100 100">
-                            <circle cx="50" cy="50" r="40" class="gauge-bg" />
-                            <circle cx="50" cy="50" r="40" class="gauge-meter" id="aiGaugeMeter" />
-                        </svg>
-                        <div class="ai-gauge-val" id="aiGaugeVal">0%</div>
-                    </div>
-                    <div class="ai-gauge-info">
-                        <p id="aiPredicted" style="font-size:1.05rem;font-weight:700;color:var(--warn);margin-bottom:8px; font-family:'Outfit', sans-serif;">예상 알람: -</p>
-                        <p id="aiSuggested" style="font-size:0.85rem;line-height:1.5;color:var(--text);">-</p>
-                    </div>
-                </div>
-            </div>
-            <div class="panel ai-box">
-                <h2>Feature Importance (기여 요인)</h2>
-                <div class="feature-importance-list">
-                    <div class="feature-row">
-                        <span class="feat-lbl">Vibration (진동)</span>
-                        <div class="feat-bar-bg"><div class="feat-bar-fill" id="featBarVib" style="width: 25%; background: var(--warn); box-shadow: 0 0 6px var(--warn-glow);"></div></div>
-                        <span class="feat-val" id="featValVib">25%</span>
-                    </div>
-                    <div class="feature-row">
-                        <span class="feat-lbl">Pressure (압력)</span>
-                        <div class="feat-bar-bg"><div class="feat-bar-fill" id="featBarPress" style="width: 25%; background: var(--accent); box-shadow: 0 0 6px var(--accent-glow);"></div></div>
-                        <span class="feat-val" id="featValPress">25%</span>
-                    </div>
-                    <div class="feature-row">
-                        <span class="feat-lbl">Temperature (온도)</span>
-                        <div class="feat-bar-bg"><div class="feat-bar-fill" id="featBarTemp" style="width: 25%; background: var(--ok); box-shadow: 0 0 6px var(--ok-glow);"></div></div>
-                        <span class="feat-val" id="featValTemp">25%</span>
-                    </div>
-                    <div class="feature-row">
-                        <span class="feat-lbl">Humidity (습도)</span>
-                        <div class="feat-bar-bg"><div class="feat-bar-fill" id="featBarHumi" style="width: 25%; background: var(--muted);"></div></div>
-                        <span class="feat-val" id="featValHumi">25%</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="ai-box" style="margin-top: 14px;">
+    <div class="wrap tab-panel" id="tab-ai" role="tabpanel" hidden>
+        <div class="ai-box">
             <h2>모델 상태 상세 정보</h2>
             <div id="aiStatus" class="ai-pre">불러오는 중…</div>
         </div>
+        <div class="ai-box">
+            <h2>실시간 예측 분석 결과</h2>
+            <p class="log-toolbar">실시간 데이터 수신과 매핑되는 이상치 예측 정보입니다.</p>
+            <div id="aiPredict" class="ai-pre">-</div>
         </div>
     </div>
 
-    </div><!-- .tab-viewport -->
-    </main>
-
     <footer class="note">
-        API: <code>GET /api/sensors</code> · <code>modules/latest</code> · <code>recipe/active</code> · 압력 <strong>mTorr</strong>.
+        API: <code>GET /api/sensors</code> · <code>GET /api/etch/history</code> · <code>GET /api/etch/events</code> · <code>GET /api/etch/summary</code>
     </footer>
 
     <script>
@@ -1127,49 +426,12 @@
         const history = { t: [], pressure: [], vib: [], temp: [], humi: [] };
         const logRows = [];
         let lastSnapshotForAi = {};
+
         let pressureLimits = {
-            unit: 'mTorr',
-            interlockMin: 50,
-            interlockMax: 150,
-            gaugeMax: 1000,
-            decimals: 1
+            unit: 'kPa',
+            interlockMin: 95,
+            interlockMax: 100
         };
-
-        function esc(v) {
-            return String(v ?? '-')
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#39;');
-        }
-
-        function chartsAvailable() {
-            return typeof Chart !== 'undefined';
-        }
-
-        function applyPressureLimitsFromApi(data) {
-            if (data.pressureInterlockMin != null) pressureLimits.interlockMin = Number(data.pressureInterlockMin);
-            if (data.pressureInterlockMax != null) pressureLimits.interlockMax = Number(data.pressureInterlockMax);
-            if (data.pressureGaugeMax != null) pressureLimits.gaugeMax = Number(data.pressureGaugeMax);
-            if (data.pressureDecimals != null) pressureLimits.decimals = Number(data.pressureDecimals);
-            applyChartPressureScale();
-        }
-
-        function applyChartPressureScale() {
-            if (!chart) return;
-            const max = pressureLimits.gaugeMax;
-            chart.options.scales.y.min = 0;
-            chart.options.scales.y.max = max;
-            chart.options.scales.y1.min = 0;
-            chart.options.scales.y1.max = 2.5;
-            if (serverChart) {
-                serverChart.options.scales.y.min = 0;
-                serverChart.options.scales.y.max = max;
-                serverChart.options.scales.y1.min = 0;
-                serverChart.options.scales.y1.max = 2.5;
-            }
-        }
 
         function pickSensor(sensors, names) {
             const list = Array.isArray(names) ? names : [names];
@@ -1185,23 +447,6 @@
             return Number(v).toFixed(dec);
         }
 
-        function sensorsAreLive(data) {
-            return data && data.sensorsLive === true && Array.isArray(data.sensors) && data.sensors.length > 0;
-        }
-
-        function clearSensorCards() {
-            document.getElementById('cTemp').textContent = '-';
-            document.getElementById('cHumi').textContent = '-';
-            document.getElementById('cPressure').textContent = '-';
-            document.getElementById('cVib').textContent = '-';
-            document.getElementById('cAccess').textContent = '-';
-            document.getElementById('cardAccess').className = 'card';
-            document.getElementById('llAccess').textContent = '-';
-            document.getElementById('llPress').textContent = '-';
-            document.getElementById('chEnv').textContent = '-';
-            document.getElementById('chPv').textContent = '-';
-        }
-
         function stateClass(st) {
             const u = (st || '').toUpperCase();
             if (u.includes('RUNNING')) return 'state-running';
@@ -1214,58 +459,17 @@
         }
 
         let chart;
-        let serverChart = null;
-
         function initChart() {
-            if (!chartsAvailable()) {
-                document.querySelectorAll('.chart-canvas').forEach(el => {
-                    el.textContent = 'Chart.js 로딩 실패 - 네트워크/CDN 상태를 확인하세요.';
-                    el.style.display = 'flex';
-                    el.style.alignItems = 'center';
-                    el.style.justifyContent = 'center';
-                    el.style.color = '#991b1b';
-                    el.style.fontWeight = '700';
-                });
-                return;
-            }
             const ctx = document.getElementById('trendChart').getContext('2d');
-            
-            // Create gradient fills
-            const pGrad = ctx.createLinearGradient(0, 0, 0, 300);
-            pGrad.addColorStop(0, 'rgba(0, 210, 255, 0.25)');
-            pGrad.addColorStop(1, 'rgba(0, 210, 255, 0.0)');
-
-            const vGrad = ctx.createLinearGradient(0, 0, 0, 300);
-            vGrad.addColorStop(0, 'rgba(234, 88, 12, 0.25)');
-            vGrad.addColorStop(1, 'rgba(234, 88, 12, 0.0)');
-
             chart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: [],
                     datasets: [
-                        { 
-                            label: '압력 (mTorr)', 
-                            data: [], 
-                            borderColor: '#00d2ff', 
-                            backgroundColor: pGrad,
-                            fill: true,
-                            tension: 0.2, 
-                            borderWidth: 2.5,
-                            yAxisID: 'y' 
-                        },
-                        { 
-                            label: '진동 (g)', 
-                            data: [], 
-                            borderColor: '#ea580c', 
-                            backgroundColor: vGrad,
-                            fill: true,
-                            tension: 0.2, 
-                            borderWidth: 2.5,
-                            yAxisID: 'y1' 
-                        },
-                        { label: '온도 (℃)', data: [], borderColor: '#00e676', borderDash: [4,2], tension: 0.2, borderWidth: 1.5, yAxisID: 'y2' },
-                        { label: '습도 (%)', data: [], borderColor: '#7c3aed', borderDash: [2,2], tension: 0.2, borderWidth: 1.5, yAxisID: 'y2' }
+                        { label: '압력 (kPa)', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.06)', fill: true, tension: 0.2, borderWidth: 2, yAxisID: 'y' },
+                        { label: '진동 (g)', data: [], borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.06)', fill: true, tension: 0.2, borderWidth: 2, yAxisID: 'y1' },
+                        { label: '온도 (℃)', data: [], borderColor: '#10b981', borderDash: [4,2], tension: 0.2, borderWidth: 1.5, yAxisID: 'y2' },
+                        { label: '습도 (%)', data: [], borderColor: '#8b5cf6', borderDash: [2,2], tension: 0.2, borderWidth: 1.5, yAxisID: 'y2' }
                     ]
                 },
                 options: {
@@ -1273,39 +477,29 @@
                     maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
                     scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
-                            ticks: { color: '#8a8d9a', font: { size: 9 } }
-                        },
-                        y: {
-                            type: 'linear', display: true, position: 'left',
-                            min: 0, max: pressureLimits.gaugeMax,
-                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
-                            ticks: { color: '#8a8d9a', font: { size: 9 } },
-                            title: { display: true, text: 'mTorr', color: '#8a8d9a', font: { size: 9 } }
-                        },
-                        y1: {
-                            type: 'linear', display: true, position: 'right',
-                            min: 0, max: 2.5,
-                            grid: { drawOnChartArea: false },
-                            ticks: { color: '#8a8d9a', font: { size: 9 } },
-                            title: { display: true, text: 'g', color: '#8a8d9a', font: { size: 9 } }
-                        },
+                        x: { grid: { color: '#f1f5f9' } },
+                        y: { type: 'linear', display: true, position: 'left', grid: { color: '#f1f5f9' }, title: { display: true, text: 'kPa', color: '#64748b', font: { weight: 'bold' } } },
+                        y1: { type: 'linear', display: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'g', color: '#64748b', font: { weight: 'bold' } } },
                         y2: { type: 'linear', display: false }
                     },
                     plugins: { 
                         legend: { 
                             position: 'bottom',
-                            labels: { color: '#8a8d9a', boxWidth: 12, boxHeight: 6, font: { size: 10 } }
+                            labels: { boxWidth: 12, font: { size: 11, weight: '500' } }
                         } 
                     }
                 }
             });
-            applyChartPressureScale();
+        }
+
+        function updateChartLabels(pUnit) {
+            if (!chart) return;
+            chart.options.scales.y.title.text = pUnit;
+            chart.data.datasets[0].label = `압력 (${pUnit})`;
+            chart.update('none');
         }
 
         function pushHistory(label, pressure, vib, temp, humi) {
-            if (!chart) return;
             history.t.push(label);
             history.pressure.push(pressure);
             history.vib.push(vib);
@@ -1332,15 +526,15 @@
             const tb = document.getElementById('logBody');
             tb.innerHTML = logRows.map(r =>
                 '<tr>' +
-                '<td style="font-family:\'Share Tech Mono\', monospace; color:var(--accent);">' + esc(r.time) + '</td>' +
-                '<td><span class="badge-state ' + esc(modStateClass(r.state)) + '">' + esc(r.state) + '</span></td>' +
-                '<td style="font-family:\'Share Tech Mono\', monospace;">' + esc(r.alarm) + '</td>' +
-                '<td>' + esc(r.interlock) + '</td>' +
-                '<td style="font-family:\'Share Tech Mono\', monospace;">' + esc(r.pressure) + '</td>' +
-                '<td style="font-family:\'Share Tech Mono\', monospace;">' + esc(r.vib) + '</td>' +
-                '<td style="font-family:\'Share Tech Mono\', monospace;">' + esc(r.temp) + '</td>' +
-                '<td style="font-family:\'Share Tech Mono\', monospace;">' + esc(r.humi) + '</td>' +
-                '<td>' + esc(r.access) + '</td>' +
+                '<td style="font-family:monospace; font-weight:600; color:var(--accent);">' + r.time + '</td>' +
+                '<td><span class="pill ' + stateClass(r.state) + '" style="font-size:0.75rem; padding:2px 8px; border-radius:4px;">' + r.state + '</span></td>' +
+                '<td style="font-family:monospace;">' + r.alarm + '</td>' +
+                '<td>' + r.interlock + '</td>' +
+                '<td style="font-family:monospace;">' + r.pressure + '</td>' +
+                '<td style="font-family:monospace;">' + r.vib + '</td>' +
+                '<td style="font-family:monospace;">' + r.temp + '</td>' +
+                '<td style="font-family:monospace;">' + r.humi + '</td>' +
+                '<td>' + r.access + '</td>' +
                 '</tr>'
             ).join('');
             document.getElementById('logEmpty').style.display = logRows.length ? 'none' : 'block';
@@ -1351,42 +545,28 @@
             fetch('/api/sensors')
                 .then(r => r.ok ? r.json() : Promise.reject(new Error(String(r.status))))
                 .then(data => {
-                    applyPressureLimitsFromApi(data);
-                    const live = sensorsAreLive(data);
+                    const pUnit = data.pressureUnit || 'kPa';
+                    document.getElementById('uPressure').textContent = pUnit;
+                    if (data.pressureInterlockMin != null) pressureLimits.interlockMin = Number(data.pressureInterlockMin);
+                    if (data.pressureInterlockMax != null) pressureLimits.interlockMax = Number(data.pressureInterlockMax);
+                    updateChartLabels(pUnit);
 
-                    const hp = document.getElementById('hdrEc');
-                    if (live) {
-                        hp.textContent = 'EtherCAT: 실측';
-                        hp.className = 'pill state-running';
-                    } else if (data.connected) {
-                        hp.textContent = 'EtherCAT: 연결';
-                        hp.className = 'pill state-ready';
-                    } else {
-                        hp.textContent = 'EtherCAT: 미연결';
-                        hp.className = 'pill alarm-code';
-                    }
+                    const sensors = data.sensors || [];
+                    const temp = pickSensor(sensors, ['온도']);
+                    const humi = pickSensor(sensors, ['습도']);
+                    const pressure = pickSensor(sensors, ['압력', '채광']);
+                    const vib = pickSensor(sensors, ['진동', '토양습도']);
 
-                    const sensors = live ? (data.sensors || []) : [];
-                    const temp = live ? pickSensor(sensors, ['온도']) : null;
-                    const humi = live ? pickSensor(sensors, ['습도']) : null;
-                    const pressure = live ? pickSensor(sensors, ['압력', '채광']) : null;
-                    const vib = live ? pickSensor(sensors, ['진동', '토양습도']) : null;
-                    const pDec = pressureLimits.decimals;
+                    document.getElementById('cTemp').textContent = fmt(temp, 2);
+                    document.getElementById('cHumi').textContent = fmt(humi, 2);
+                    document.getElementById('cPressure').textContent = fmt(pressure, 2);
+                    document.getElementById('cVib').textContent = fmt(vib, 2);
 
-                    if (!live) {
-                        clearSensorCards();
-                    } else {
-                        document.getElementById('cTemp').textContent = fmt(temp, 2);
-                        document.getElementById('cHumi').textContent = fmt(humi, 2);
-                        document.getElementById('cPressure').textContent = fmt(pressure, pDec);
-                        document.getElementById('cVib').textContent = fmt(vib, 2);
-                    }
-
-                    const safe = live ? data.accessSafe : undefined;
+                    const safe = data.accessSafe;
                     const accEl = document.getElementById('cAccess');
                     const cardAcc = document.getElementById('cardAccess');
                     if (typeof safe === 'boolean') {
-                        accEl.textContent = safe ? '닫힘' : '열림';
+                        accEl.textContent = safe ? 'SAFE' : 'DETECTED';
                         cardAcc.className = 'card ' + (safe ? 'access-ok' : 'access-bad');
                     } else {
                         accEl.textContent = '-';
@@ -1420,11 +600,9 @@
                     }
                     document.getElementById('hdrTime').textContent = '마지막 수신: ' + (data.lastUpdate || '-');
 
-                    const pressOk = pressure != null
-                        && pressure >= pressureLimits.interlockMin
-                        && pressure <= pressureLimits.interlockMax;
+                    const pressOk = pressure != null && pressure >= pressureLimits.interlockMin && pressure <= pressureLimits.interlockMax;
                     document.getElementById('llAccess').textContent = (typeof safe === 'boolean')
-                        ? (safe ? '닫힘 (정상)' : '열림 (인터락 NG)')
+                        ? (safe ? '정상 (SAFE)' : '감지 (DETECTED)')
                         : '-';
                     document.getElementById('llPress').textContent = (pressure != null)
                         ? (pressOk ? '목표 대역 내' : '편차·점검 필요')
@@ -1434,7 +612,7 @@
                     document.getElementById('chEnv').textContent =
                         (temp != null && humi != null) ? (fmt(temp, 1) + '℃ / ' + fmt(humi, 1) + '%') : '-';
                     document.getElementById('chPv').textContent =
-                        (pressure != null && vib != null) ? (fmt(pressure, 1) + ' mTorr / ' + fmt(vib, 2) + ' g') : '-';
+                        (pressure != null && vib != null) ? (fmt(pressure, 2) + ' ' + pUnit + ' / ' + fmt(vib, 2) + ' g') : '-';
                     document.getElementById('chState').textContent = st;
 
                     lastSnapshotForAi = {
@@ -1448,48 +626,32 @@
                     };
 
                     const tlabel = new Date().toLocaleTimeString('ko-KR', { hour12: false });
-                    if (live && pressure != null && vib != null && temp != null && humi != null) {
+                    if (pressure != null && vib != null && temp != null && humi != null) {
                         pushHistory(tlabel, pressure, vib, temp, humi);
                     }
 
-                    const key = [data.lastUpdate, st, al, live, pressure, vib].join('|');
-                    if (key !== lastKey && live) {
+                    const key = [data.lastUpdate, st, al, pressure, vib].join('|');
+                    if (key !== lastKey && sensors.length > 0) {
                         lastKey = key;
                         prependLog({
                             time: tlabel,
                             state: st,
                             alarm: al,
                             interlock: (typeof ilOk === 'boolean') ? (ilOk ? 'OK' : 'NG') : '-',
-                            pressure: fmt(pressure, pDec),
+                            pressure: fmt(pressure, 2),
                             vib: fmt(vib, 2),
                             temp: fmt(temp, 2),
                             humi: fmt(humi, 2),
-                            access: (typeof safe === 'boolean') ? (safe ? '닫힘' : '열림') : '-'
+                            access: (typeof safe === 'boolean') ? (safe ? 'SAFE' : 'DET') : '-'
                         });
                     }
 
-                    syncModuleSourceFromSensors(data);
-
-                    if (!live) {
+                    if (!sensors.length) {
                         document.getElementById('logEmpty').style.display = logRows.length ? 'none' : 'block';
-                    }
-
-                    syncRecipeSourceFromSensors(data);
-                    
-                    // Always pull latest module states for the interactive Chamber Map!
-                    refreshModulesTab();
-
-                    if (document.getElementById('tab-recipe').classList.contains('active')) {
-                        refreshRecipeTab();
-                    }
-                    if (document.getElementById('tab-ai').classList.contains('active')) {
-                        refreshAiTab();
                     }
                 })
                 .catch(() => {
                     document.getElementById('hdrTime').textContent = '마지막 수신: 오류 (Flask 확인)';
-                    document.getElementById('hdrEc').textContent = 'EtherCAT: -';
-                    clearSensorCards();
                 });
         }
 
@@ -1505,234 +667,25 @@
                     const on = p.id === 'tab-' + id;
                     p.classList.toggle('active', on);
                     p.hidden = !on;
-                    if (on) {
-                        const scroller = p.querySelector('.wrap') || p;
-                        scroller.scrollTop = 0;
-                    }
                 });
-                window.scrollTo(0, 0);
                 if (id === 'history') refreshServerHistory();
                 if (id === 'events') refreshEvents();
-                if (id === 'modules') refreshModulesTab();
-                if (id === 'recipe') refreshRecipeTab();
                 if (id === 'ai') refreshAiTab();
             });
         });
 
-        function modStateClass(state) {
-            const u = (state || '').toLowerCase();
-            if (u.includes('alarm')) return 'st-alarm';
-            if (u.includes('warning')) return 'st-warning';
-            if (u.includes('maintenance') || u.includes('maint')) return 'st-maintenance';
-            if (u.includes('processing')) return 'st-processing';
-            if (u.includes('running') || u.includes('complete') || u.includes('standby')) return 'st-running';
-            if (u.includes('ready')) return 'st-ready';
-            if (u.includes('offline')) return 'st-offline';
-            return 'st-idle';
-        }
-
-        function fmtDoor(v) {
-            if (v === true) return '닫힘';
-            if (v === false) return '열림';
-            return '-';
-        }
-
-        function fmtWafer(v) {
-            if (v === true) return '있음';
-            if (v === false) return '없음';
-            return '-';
-        }
-
-        function resolveModuleSource() {
-            const sel = document.getElementById('modSource');
-            return sel ? sel.value : 'demo';
-        }
-
-        function syncModuleSourceFromSensors(data) {
-            const sel = document.getElementById('modSource');
-            if (!sel || !data) return;
-            if (data.dataSource === 'live' || data.dataSource === 'demo') {
-                sel.value = data.dataSource;
-                return;
-            }
-            const bench = data.benchMode === true;
-            const live = data.sensorsLive === true && data.connected;
-            const next = live ? 'live' : (bench ? 'demo' : sel.value);
-            if (sel.value !== next) sel.value = next;
-        }
-
-        function updateChamberMap(modules) {
-            if (!modules || !modules.length) return;
-            
-            // Set default offline states first, then overwrite
-            const ids = ['LOADPORT1', 'LOADPORT2', 'LOADPORT3', 'ALIGNER', 'SIDESTORAGE', 'BUFFERMODULE', 'EFEMROBOT', 'TRANSFERMODULE', 'PM1', 'PM2', 'PM3', 'PM4'];
-            
-            modules.forEach(m => {
-                const rawId = m.id || m.moduleId || '';
-                const id = rawId.toUpperCase();
-                const state = (m.state || m.stateText || '').toUpperCase();
-                const hasWafer = m.hasWafer === true;
-                const doorClosed = m.doorClosed;
-
-                const rectEl = document.getElementById('map-rect-' + id);
-                const waferEl = document.getElementById('map-wafer-' + id);
-                const doorEl = document.getElementById('map-door-' + id);
-                const stateEl = document.getElementById('map-state-' + id);
-
-                if (rectEl) {
-                    rectEl.className.baseVal = ''; // Clear classes
-                    const cls = modStateClass(state);
-                    rectEl.classList.add('map-chamber', 'map-' + cls);
-                }
-
-                if (waferEl) {
-                    waferEl.style.display = hasWafer ? 'block' : 'none';
-                }
-
-                if (doorEl && doorClosed !== undefined && doorClosed !== null) {
-                    doorEl.style.stroke = doorClosed ? '#ff1744' : '#00e676';
-                }
-
-                if (stateEl) {
-                    stateEl.textContent = state.replace('OPERATIONAL', 'OPR').replace('STANDBY', 'STBY');
-                }
-            });
-        }
-
-        function renderModules(j) {
-            const tb = document.getElementById('modTableBody');
-            const empty = document.getElementById('modEmpty');
-            const grid = document.getElementById('modMiniGrid');
-            const meta = document.getElementById('modMeta');
-            const modules = (j && j.success && Array.isArray(j.modules)) ? j.modules : [];
-            
-            // Dynamic updates for SVG Chamber Map
-            updateChamberMap(modules);
-
-            if (!modules.length) {
-                tb.innerHTML = '';
-                grid.innerHTML = '';
-                empty.style.display = 'block';
-                meta.textContent = '갱신: ' + (j && j.updatedAt ? j.updatedAt : '-') + ' · 0개 모듈';
-                return;
-            }
-            empty.style.display = 'none';
-            meta.textContent = '갱신: ' + (j.updatedAt || '-') + ' · ' + modules.length + '개 · ' + (j.dataSource || '-');
-            tb.innerHTML = modules.map(m => {
-                const id = m.id || m.moduleId || '-';
-                const st = m.state || m.stateText || '-';
-                const cls = modStateClass(st);
-                return '<tr><td><strong>' + esc(id) + '</strong></td>' +
-                    '<td><span class="badge-state ' + esc(cls) + '">' + esc(st) + '</span></td>' +
-                    '<td>' + esc(fmtDoor(m.doorClosed)) + '</td>' +
-                    '<td>' + esc(fmtWafer(m.hasWafer)) + '</td>' +
-                    '<td>' + esc(m.detail || '-') + '</td></tr>';
-            }).join('');
-            grid.innerHTML = modules.map(m => {
-                const id = m.id || m.moduleId || '?';
-                const st = m.state || m.stateText || '-';
-                const cls = modStateClass(st);
-                return '<div class="mod-chip ' + esc(cls) + '"><div class="mid">' + esc(id) + '</div><div class="st">' + esc(st) + '</div></div>';
-            }).join('');
-        }
-
-        function refreshModulesTab() {
-            const source = resolveModuleSource();
-            fetch('/api/etch/modules/latest?source=' + encodeURIComponent(source))
-                .then(r => r.json())
-                .then(renderModules)
-                .catch(() => {
-                    document.getElementById('modMeta').textContent = '조회 실패 (Flask 확인)';
-                });
-        }
-
-        document.getElementById('btnModRefresh').addEventListener('click', refreshModulesTab);
-        document.getElementById('modSource').addEventListener('change', refreshModulesTab);
-
-        function resolveRecipeSource() {
-            const sel = document.getElementById('recSource');
-            return sel ? sel.value : 'demo';
-        }
-
-        function syncRecipeSourceFromSensors(data) {
-            const sel = document.getElementById('recSource');
-            if (!sel || !data) return;
-            if (data.dataSource === 'live' || data.dataSource === 'demo') {
-                sel.value = data.dataSource;
-                const modSel = document.getElementById('modSource');
-                if (modSel) modSel.value = data.dataSource;
-                return;
-            }
-            const live = data.sensorsLive === true && data.connected;
-            const next = live ? 'live' : (data.benchMode === true ? 'demo' : sel.value);
-            sel.value = next;
-        }
-
-        function renderRecipe(j) {
-            const empty = document.getElementById('recEmpty');
-            const meta = document.getElementById('recMeta');
-            if (!j || !j.success || !j.recipe) {
-                document.getElementById('recName').textContent = '-';
-                document.getElementById('recVer').textContent = '-';
-                document.getElementById('recSeq').textContent = '-';
-                document.getElementById('recEtchTick').textContent = '-';
-                document.getElementById('recStripTick').textContent = '-';
-                document.getElementById('recAlignTick').textContent = '-';
-                document.getElementById('recId').textContent = '-';
-                document.getElementById('recDataSrc').textContent = j && j.dataSource ? j.dataSource : '-';
-                meta.textContent = j && j.message ? j.message : '활성 레시피: 없음';
-                empty.style.display = 'block';
-                return;
-            }
-            const r = j.recipe;
-            empty.style.display = 'none';
-            meta.textContent = '활성: ' + (r.name || r.id || '-');
-            document.getElementById('recName').textContent = r.name || '-';
-            document.getElementById('recVer').textContent = 'v' + (r.version || '1');
-            document.getElementById('recSeq').textContent = r.etchPmSequence || '-';
-            document.getElementById('recEtchTick').textContent = r.etchProcessTicks != null ? r.etchProcessTicks + ' tick' : '-';
-            document.getElementById('recStripTick').textContent = r.stripProcessTicks != null ? r.stripProcessTicks + ' tick' : '-';
-            document.getElementById('recAlignTick').textContent = r.alignProcessTicks != null ? r.alignProcessTicks + ' tick' : '-';
-            document.getElementById('recId').textContent = r.id || '-';
-            document.getElementById('recDataSrc').textContent = j.dataSource || '-';
-        }
-
-        function refreshRecipeTab() {
-            const source = resolveRecipeSource();
-            fetch('/api/etch/recipe/active?source=' + encodeURIComponent(source))
-                .then(r => r.json())
-                .then(renderRecipe)
-                .catch(() => {
-                    document.getElementById('recMeta').textContent = '조회 실패 (Flask 확인)';
-                });
-        }
-
-        document.getElementById('btnRecRefresh').addEventListener('click', refreshRecipeTab);
-        document.getElementById('recSource').addEventListener('change', refreshRecipeTab);
-
+        let serverChart;
         function initServerChart() {
-            if (!chartsAvailable()) {
-                return;
-            }
             const ctx = document.getElementById('serverTrendChart').getContext('2d');
-            
-            const pGrad = ctx.createLinearGradient(0, 0, 0, 300);
-            pGrad.addColorStop(0, 'rgba(0, 210, 255, 0.2)');
-            pGrad.addColorStop(1, 'rgba(0, 210, 255, 0.0)');
-
-            const vGrad = ctx.createLinearGradient(0, 0, 0, 300);
-            vGrad.addColorStop(0, 'rgba(234, 88, 12, 0.2)');
-            vGrad.addColorStop(1, 'rgba(234, 88, 12, 0.0)');
-
             serverChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: [],
                     datasets: [
-                        { label: '압력 mTorr', data: [], borderColor: '#00d2ff', backgroundColor: pGrad, fill: true, tension: 0.15, borderWidth: 2, yAxisID: 'y' },
-                        { label: '진동 g', data: [], borderColor: '#ea580c', backgroundColor: vGrad, fill: true, tension: 0.15, borderWidth: 2, yAxisID: 'y1' },
-                        { label: '온도 ℃', data: [], borderColor: '#00e676', tension: 0.15, borderWidth: 1.5, yAxisID: 'y2' },
-                        { label: '습도 %', data: [], borderColor: '#7c3aed', tension: 0.15, borderWidth: 1.5, yAxisID: 'y2' }
+                        { label: '압력', data: [], borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.05)', fill: true, tension: 0.15, yAxisID: 'y', borderWidth: 2 },
+                        { label: '진동 (g)', data: [], borderColor: '#f97316', backgroundColor: 'rgba(249,115,22,0.05)', fill: true, tension: 0.15, yAxisID: 'y1', borderWidth: 2 },
+                        { label: '온도 (℃)', data: [], borderColor: '#10b981', tension: 0.15, yAxisID: 'y2', borderWidth: 1.5, borderDash: [4,2] },
+                        { label: '습도 (%)', data: [], borderColor: '#8b5cf6', tension: 0.15, yAxisID: 'y2', borderWidth: 1.5, borderDash: [2,2] }
                     ]
                 },
                 options: {
@@ -1740,49 +693,21 @@
                     maintainAspectRatio: false,
                     interaction: { mode: 'index', intersect: false },
                     scales: {
-                        x: {
-                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
-                            ticks: { color: '#8a8d9a', font: { size: 9 } }
-                        },
-                        y: {
-                            position: 'left', min: 0, max: pressureLimits.gaugeMax,
-                            grid: { color: 'rgba(255, 255, 255, 0.03)' },
-                            ticks: { color: '#8a8d9a', font: { size: 9 } },
-                            title: { display: true, text: 'mTorr', color: '#8a8d9a', font: { size: 9 } }
-                        },
-                        y1: {
-                            position: 'right', min: 0, max: 2.5,
-                            grid: { drawOnChartArea: false },
-                            ticks: { color: '#8a8d9a', font: { size: 9 } },
-                            title: { display: true, text: 'g', color: '#8a8d9a', font: { size: 9 } }
-                        },
+                        y: { position: 'left', title: { display: true, text: '압력', color: '#64748b', font: { weight: 'bold' } }, grid: { color: '#f1f5f9' } },
+                        y1: { position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'g', color: '#64748b', font: { weight: 'bold' } } },
                         y2: { display: false }
                     },
-                    plugins: { 
-                        legend: { 
-                            position: 'bottom',
-                            labels: { color: '#8a8d9a', font: { size: 10 } }
-                        } 
-                    }
+                    plugins: { legend: { position: 'bottom' } }
                 }
             });
-            applyChartPressureScale();
         }
 
         function refreshServerHistory() {
-            fetch('/api/etch/summary?source=live')
+            fetch('/api/etch/summary')
                 .then(r => r.json())
                 .then(j => {
                     if (!j.success || !j.summary) return;
                     const s = j.summary;
-                    const demoPill = document.getElementById('hdrDemo');
-                    if (s.demoStreamActive) {
-                        demoPill.style.display = 'inline-block';
-                        demoPill.textContent = '데모 버퍼 ' + (s.demoSamples != null ? s.demoSamples : 0) + '건';
-                        demoPill.className = 'pill state-warning';
-                    } else {
-                        demoPill.style.display = 'none';
-                    }
                     document.getElementById('kpiSamples').textContent = s.samples != null ? s.samples : '-';
                     document.getElementById('kpiRun').textContent = s.runningRatio != null ? (s.runningRatio * 100).toFixed(1) + '%' : '-';
                     document.getElementById('kpiAlEv').textContent = s.alarmEvents != null ? s.alarmEvents : '-';
@@ -1790,20 +715,25 @@
                 })
                 .catch(() => {});
 
-            fetch('/api/etch/history?limit=600&source=live')
+            fetch('/api/etch/history?limit=600')
                 .then(r => r.json())
                 .then(j => {
                     if (!j.success || !Array.isArray(j.items)) return;
-                    const items = j.items.filter(x =>
-                        x.pressure_mtorr != null && x.temperature != null && x.humidity != null
-                    );
+                    const items = j.items;
+                    const pUnit = items.length > 0 ? (items[0].pressure_unit || 'kPa') : 'kPa';
+                    
+                    if (serverChart) {
+                        serverChart.options.scales.y.title.text = pUnit;
+                        serverChart.data.datasets[0].label = `압력 (${pUnit})`;
+                    }
+
                     const labels = items.map(x => {
                         try {
                             const d = new Date(x.timestamp);
                             return isNaN(d.getTime()) ? String(x.timestamp).slice(11, 19) : d.toLocaleTimeString('ko-KR', { hour12: false });
                         } catch (_) { return '-'; }
                     });
-                    const pr = items.map(x => x.pressure_mtorr ?? x.pressure_kpa);
+                    const pr = items.map(x => x.pressure_kpa);
                     const vi = items.map(x => x.vibration_g);
                     const te = items.map(x => x.temperature);
                     const hu = items.map(x => x.humidity);
@@ -1821,7 +751,7 @@
         document.getElementById('btnRefreshHistory').addEventListener('click', refreshServerHistory);
 
         function refreshEvents() {
-            fetch('/api/etch/events?limit=100&source=live')
+            fetch('/api/etch/events?limit=100')
                 .then(r => r.json())
                 .then(j => {
                     const tb = document.getElementById('eventsBody');
@@ -1834,7 +764,14 @@
                     empty.style.display = 'none';
                     tb.innerHTML = j.items.map(e => {
                         const tt = e.time || '-';
-                        return '<tr><td>' + esc(tt) + '</td><td>' + esc(e.kind || '-') + '</td><td>' + esc(e.message || '') + '</td><td>' + esc(e.equipmentState || '-') + '</td><td>' + esc(e.alarmCode || '-') + '</td><td>' + esc(e.username || '-') + '</td></tr>';
+                        return '<tr>' +
+                            '<td style="font-family:monospace;">' + tt + '</td>' +
+                            '<td><strong>' + (e.kind || '-') + '</strong></td>' +
+                            '<td>' + (e.message || '') + '</td>' +
+                            '<td><span class="pill ' + stateClass(e.equipmentState) + '" style="font-size:0.75rem; padding:2px 8px; border-radius:4px;">' + (e.equipmentState || '-') + '</span></td>' +
+                            '<td style="font-family:monospace;">' + (e.alarmCode || '-') + '</td>' +
+                            '<td>' + (e.username || '-') + '</td>' +
+                            '</tr>';
                     }).join('');
                 })
                 .catch(() => {});
@@ -1845,97 +782,28 @@
                 .then(r => r.json())
                 .then(x => {
                     document.getElementById('aiStatus').textContent = JSON.stringify(x, null, 2);
-                    const eng = (x.engine || '').toLowerCase();
-                    document.getElementById('aiModelReady').textContent =
-                        x.ready ? (eng === 'sklearn' ? 'ML 분류기' : '준비') : '스텁';
                 })
-                .catch(() => {
-                    document.getElementById('aiStatus').textContent = '상태 조회 실패';
-                    document.getElementById('aiModelReady').textContent = '-';
-                });
+                .catch(() => { document.getElementById('aiStatus').textContent = '상태 조회 실패'; });
 
-            fetch('/api/etch/ai/latest')
+            fetch('/api/etch/ai/predict', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(lastSnapshotForAi)
+            })
                 .then(r => r.json())
                 .then(x => {
-                    if (!x.success) {
-                        document.getElementById('aiScoreNum').textContent = '-';
-                        document.getElementById('aiSuggested').textContent =
-                            x.message || 'WPF HMI를 실행하고 sensor-data를 전송하세요.';
-                        document.getElementById('aiUpdatedAt').textContent = '-';
-                        
-                        // Reset gauge
-                        document.getElementById('aiGaugeMeter').style.strokeDashoffset = 251.3;
-                        document.getElementById('aiGaugeVal').textContent = '0%';
-                        return;
-                    }
-                    
-                    const sc = x.anomaly_score != null ? Number(x.anomaly_score) : NaN;
-                    const scorePercent = Number.isNaN(sc) ? 0 : Math.min(100, Math.max(0, Math.round(sc * 100)));
-                    
-                    document.getElementById('aiScoreNum').textContent = Number.isNaN(sc) ? '-' : sc.toFixed(2);
-                    document.getElementById('aiScoreNum').style.color = sc >= 0.75 ? 'var(--alarm)' : sc >= 0.45 ? 'var(--warn)' : 'var(--ok)';
-                    
-                    // Update gauge visual representation
-                    const meter = document.getElementById('aiGaugeMeter');
-                    const offset = 251.3 - (251.3 * (scorePercent / 100));
-                    meter.style.strokeDashoffset = offset;
-                    document.getElementById('aiGaugeVal').textContent = scorePercent + '%';
-                    
-                    if (sc >= 0.75) {
-                        meter.style.stroke = 'var(--alarm)';
-                    } else if (sc >= 0.45) {
-                        meter.style.stroke = 'var(--warn)';
-                    } else {
-                        meter.style.stroke = 'var(--ok)';
-                    }
-
-                    const pa = (x.predicted_alarm || 'NONE').toString().toUpperCase();
-                    const pc = x.prediction_confidence != null ? Number(x.prediction_confidence) : NaN;
-                    document.getElementById('aiPredicted').textContent = pa === 'NONE'
-                        ? '예상 알람: 없음'
-                        : '예상 알람: ' + pa + (Number.isNaN(pc) ? '' : ' · 신뢰 ' + (pc * 100).toFixed(0) + '%');
-                    document.getElementById('aiSuggested').textContent = x.suggested_action || x.note || '-';
-                    document.getElementById('aiUpdatedAt').textContent = x.updatedAt || '-';
-
-                    // Update Feature Importance values based on telemetry values dynamically
-                    const pressVal = lastSnapshotForAi.pressure || 0;
-                    const vibVal = lastSnapshotForAi.vibration || 0;
-                    const tempVal = lastSnapshotForAi.temperature || 0;
-                    const humiVal = lastSnapshotForAi.humidity || 0;
-
-                    const pressDev = Math.max(0, Math.abs(pressVal - 100) / 50); // standard is 100
-                    const vibDev = Math.max(0, vibVal / 0.8); // standard threshold is 0.8
-                    const tempDev = Math.max(0, Math.abs(tempVal - 23.8) / 5);
-                    const humiDev = Math.max(0, Math.abs(humiVal - 42) / 10);
-
-                    const totalDev = pressDev + vibDev + tempDev + humiDev + 0.01;
-                    const vibPct = Math.round((vibDev / totalDev) * 100);
-                    const pressPct = Math.round((pressDev / totalDev) * 100);
-                    const tempPct = Math.round((tempDev / totalDev) * 100);
-                    const humiPct = 100 - (vibPct + pressPct + tempPct);
-
-                    document.getElementById('featBarVib').style.width = vibPct + '%';
-                    document.getElementById('featValVib').textContent = vibPct + '%';
-                    document.getElementById('featBarPress').style.width = pressPct + '%';
-                    document.getElementById('featValPress').textContent = pressPct + '%';
-                    document.getElementById('featBarTemp').style.width = tempPct + '%';
-                    document.getElementById('featValTemp').textContent = tempPct + '%';
-                    document.getElementById('featBarHumi').style.width = Math.max(0, humiPct) + '%';
-                    document.getElementById('featValHumi').textContent = Math.max(0, humiPct) + '%';
+                    document.getElementById('aiPredict').textContent = JSON.stringify(x, null, 2);
                 })
-                .catch(() => {
-                    document.getElementById('aiSuggested').textContent = 'AI latest 조회 실패';
-                });
+                .catch(() => { document.getElementById('aiPredict').textContent = '예측 호출 실패'; });
         }
 
         initChart();
         initServerChart();
         poll();
-        refreshServerHistory();
         setInterval(poll, pollMs);
         setInterval(() => {
-            if (document.getElementById('tab-recipe').classList.contains('active')) refreshRecipeTab();
-        }, 2000);
+            if (document.getElementById('tab-ai').classList.contains('active')) refreshAiTab();
+        }, 8000);
     </script>
 </body>
 </html>
